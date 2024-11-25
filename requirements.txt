@@ -1,1 +1,9 @@
 streamlit
+yfinance
+scikit-learn
+mysql-connector-python 
+sqlalchemy 
+pandas
+python-dotenv
+streamlit-login-auth-ui
+trycourier

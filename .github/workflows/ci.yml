@@ -1,0 +1,37 @@
+name: CI Workflow for My Project
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull request to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu image for the runner
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'  # Specify the Python version
+
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Set up certificate as an environment variable
+      env:
+        CA_CERTIFICATE: ${{ secrets.CA_CERTIFICATE }}  # Reference the secret in GitHub Secrets
+      run: |
+        echo "$CA_CERTIFICATE" > path/to/ca.pem  # Write the secret to a file
+        echo "Certificate has been set"
+
+    - name: Run Python Script
+      run: |
+        python streamlit_app.py  # Replace this with the actual Python script you want to run
