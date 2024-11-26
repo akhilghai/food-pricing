@@ -1,19 +1,61 @@
 import streamlit as st
-from streamlit_login_auth_ui.widgets import __login__
+import data_collection_preprocessing
 
-__login__obj = __login__(auth_token = "courier_auth_token", 
-                    company_name = "Shims",
-                    width = 200, height = 250, 
-                    logout_button_name = 'Logout', hide_menu_bool = False, 
-                    hide_footer_bool = False, 
-                    lottie_url = 'https://assets2.lottiefiles.com/packages/lf20_jcikwtux.json')
+@st.cache_data
+def get_data():
+    table_name = "commodity_data"
 
-LOGGED_IN = __login__obj.build_login_ui()
+    # Check if data exists in MySQL
+    if data_collection_preprocessing.table_exists(table_name):
+        st.write("Fetching data from MySQL...")
+        return data_collection_preprocessing.fetch_from_mysql(table_name)
+    else:
+        st.write("Running data preprocessing and saving to MySQL...")
+        return data_collection_preprocessing.preprocess_and_save_to_mysql(table_name)
 
-if LOGGED_IN == True:
+def main():
+    if "user" not in st.session_state:
+        st.session_state["user"] = None
 
-    st.markown("Your Streamlit Application Begins here!")
+    if st.session_state["user"]:
+        st.title("Food-Related Commodity Data Viewer")
+        st.sidebar.success(f"Welcome {st.session_state['user']}!")
+        if st.sidebar.button("Logout"):
+            st.session_state["user"] = None
+            st.rerun()
 
+         # Load data
+        df = get_data()
+
+        # Display data
+        st.write("### Processed Commodity Data")
+        st.dataframe(df)
+    else:
+        st.title("Please log in to access the dashboard.")
+
+   
+
+# if __name__ == "__main__":
+#     main()
+
+#________________________________________
+
+# import streamlit as st
+# from streamlit_login_auth_ui.widgets import __login__
+
+# __login__obj = __login__(auth_token = "courier_auth_token", 
+#                     company_name = "Shims",
+#                     width = 200, height = 250, 
+#                     logout_button_name = 'Logout', hide_menu_bool = False, 
+#                     hide_footer_bool = False, 
+#                     lottie_url = 'https://assets2.lottiefiles.com/packages/lf20_jcikwtux.json')
+
+# LOGGED_IN = __login__obj.build_login_ui()
+
+# if LOGGED_IN == True:
+
+#     st.markown("Your Streamlit Application Begins here!")
+#_____________________________________
 
 # import streamlit as st
 
