@@ -33,6 +33,6 @@ jobs:
       #  echo "$CA_CERTIFICATE" > path/to/ca.pem  # Write the secret to a file
          
    
-    # - name: Run Python Script
-    #   run: |
-    #     streamlit run login.py  # Replace this with the actual Python script you want to run
+    - name: Run Streamlit
+      run: |
+        streamlit run login.py  # Replace this with the actual Python script you want to run

@@ -1,5 +1,16 @@
 import streamlit as st
 import data_collection_preprocessing
+from streamlit_option_menu import option_menu
+
+def format_green(text:str):
+    st.markdown(
+        f"""
+        <div style="text-align: center;">
+            <h2 style="color: #adcbbe;">{text}</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 @st.cache_data
 def get_data():
@@ -7,10 +18,10 @@ def get_data():
 
     # Check if data exists in MySQL
     if data_collection_preprocessing.table_exists(table_name):
-        st.write("Fetching data from MySQL...")
+        # st.write("Fetching data from MySQL...")
         return data_collection_preprocessing.fetch_from_mysql(table_name)
     else:
-        st.write("Running data preprocessing and saving to MySQL...")
+        # st.write("Running data preprocessing and saving to MySQL...")
         return data_collection_preprocessing.preprocess_and_save_to_mysql(table_name)
 
 def main():
@@ -18,43 +29,65 @@ def main():
         st.session_state["user"] = None
 
     if st.session_state["user"]:
-        st.title("Food-Related Commodity Data Viewer")
         st.sidebar.success(f"Welcome {st.session_state['user']}!")
-        if st.sidebar.button("Logout"):
-            st.session_state["user"] = None
-            st.rerun()
+
+        # Display the image in the sidebar
+        
+        st.sidebar.image('user.png')
+        st.sidebar.markdown("---")
 
          # Load data
         df = get_data()
 
-        # Display data
-        st.write("### Processed Commodity Data")
-        st.dataframe(df)
+        with st.sidebar:
+            selected_page = option_menu(
+                menu_title="Menu",
+                options=["Overview", "Statistics", "Forecasting", 
+                        "About"],
+                icons=["house", "bar-chart-line", "bi-graph-up-arrow", "bi-info-square-fill", ],
+                menu_icon="cast",
+                default_index=0,
+                orientation="vertical",
+                key="navigation_menu"
+            )
+
+        st.sidebar.markdown("---")
+        
+        if st.sidebar.button("Logout"):
+            st.session_state["user"] = None
+            st.rerun()
+
+
+
+        # Display Body
+        st.markdown(
+            """
+            <div style="text-align: center;">
+                <h1 style="color: #adcbbe;">U.S. Food Price Forecasting</h1>
+                <h2>Predicting Future Trends for U.S. Food Commodities</h2>
+                <p>This project aims to develop a statistical and forecasting tool to analyze the prices of food commodities in the United States. By leveraging data from Yahoo and applying advanced statistical models and forecasting techniques, the app provides insights into future price trends for a variety of food items. This tool helps stakeholders make informed decisions regarding pricing, supply chain management, and budgeting, ensuring the accuracy and reliability of price predictions in the food market.</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        if(selected_page=="Overview"):
+            st.markdown('---')
+            format_green("Overview")
+            
+            st.write(data_collection_preprocessing.commodity_tickers)
+            st.write("### Processed Commodity Data")
+            st.dataframe(df)
+
+        # Footer
+        st.markdown("""
+            <div style="background-color:#f1f1f1;padding:20px;text-align:center;margin-top:30px;">
+                <p style="color:#333;">U.S. Food Pricing Forecasting - All Rights Reserved</p>
+            </div>
+        """, unsafe_allow_html=True)
     else:
         st.title("Please log in to access the dashboard.")
 
-   
 
-# if __name__ == "__main__":
-#     main()
-
-#________________________________________
-
-# import streamlit as st
-# from streamlit_login_auth_ui.widgets import __login__
-
-# __login__obj = __login__(auth_token = "courier_auth_token", 
-#                     company_name = "Shims",
-#                     width = 200, height = 250, 
-#                     logout_button_name = 'Logout', hide_menu_bool = False, 
-#                     hide_footer_bool = False, 
-#                     lottie_url = 'https://assets2.lottiefiles.com/packages/lf20_jcikwtux.json')
-
-# LOGGED_IN = __login__obj.build_login_ui()
-
-# if LOGGED_IN == True:
-
-#     st.markown("Your Streamlit Application Begins here!")
 #_____________________________________
 
 # import streamlit as st
