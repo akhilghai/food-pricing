@@ -44,8 +44,29 @@ conversion_factors = {
     'coffee': 0.01
 }
 
+# Units for each commodity (for future use in plotting)
+commodity_units = {
+    'corn': 'USD per bushel',       # Corn futures (CME)
+    'wheat': 'USD per bushel',      # Wheat futures (CME)
+    'soybeans': 'USD per bushel',   # Soybeans futures (CME)
+    'sugar': 'USD per pound',       # Sugar futures (ICE)
+    'coffee': 'USD per pound'       # Coffee futures (ICE)
+}
+
 start_date = '2000-01-01'
 end_date = '2024-12-31'
+
+# data specifications
+data_Specifications={
+        'Data Frequency': 'Monthly',
+        'Start Date': start_date,
+		'End Date': end_date,
+        'Coverage': '5 indicators',
+        'Availability': 'Available'
+}
+
+
+
 
 # Function to check if table exists in MySQL with SSL support
 def table_exists(table_name):

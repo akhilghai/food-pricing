@@ -1,6 +1,7 @@
 import streamlit as st
 import data_collection_preprocessing
 from streamlit_option_menu import option_menu
+import pandas as pd
 
 def format_green(text:str):
     st.markdown(
@@ -37,7 +38,7 @@ def main():
         st.sidebar.markdown("---")
 
          # Load data
-        df = get_data()
+        combined_data = get_data()
 
         with st.sidebar:
             selected_page = option_menu(
@@ -65,7 +66,13 @@ def main():
             <div style="text-align: center;">
                 <h1 style="color: #adcbbe;">U.S. Food Price Forecasting</h1>
                 <h2>Predicting Future Trends for U.S. Food Commodities</h2>
-                <p>This project aims to develop a statistical and forecasting tool to analyze the prices of food commodities in the United States. By leveraging data from Yahoo and applying advanced statistical models and forecasting techniques, the app provides insights into future price trends for a variety of food items. This tool helps stakeholders make informed decisions regarding pricing, supply chain management, and budgeting, ensuring the accuracy and reliability of price predictions in the food market.</p>
+            </div>
+            <div>
+                <p>This project aims to develop a statistical and forecasting tool to analyze the <b>closing prices</b> of food commodities in the United States. 
+                By leveraging data from Yahoo and applying advanced statistical models and forecasting techniques, 
+                the app provides insights into future price trends for a variety of food items. 
+                This tool helps stakeholders make informed decisions regarding pricing, supply chain management, 
+                and budgeting, ensuring the accuracy and reliability of price predictions in the food market.</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -73,10 +80,112 @@ def main():
         if(selected_page=="Overview"):
             st.markdown('---')
             format_green("Overview")
+
+            # Product Overview Section
+            st.markdown(
+                """
+                The Commodity Configuration allows users to track and forecast prices of key agricultural commodities in the U.S. market. 
+                Data for these commodities is fetched from Yahoo Finance for comprehensive analysis.
+                
+                - **Commodities Included**:- Corn, Wheat, Soybeans, Sugar and Coffee. These commodities are crucial indicators for agricultural markets, and the application enables detailed statistical and forecasting analysis.
+                - **Data Source**: Yahoo Finance - The data is retrieved from Yahoo Finance, a trusted source for commodity and financial market data.
+                - **Coverage**: Data spans five core agricultural commodities since January 2011.
+                - **Data Organization**: Access is via programmatic queries to Yahoo Finance's API, allowing seamless integration for advanced forecasting.
+                """
+            )
+
+            # Create DataFrame for Commodity Information
+            commodity_data = pd.DataFrame(list(data_collection_preprocessing.commodity_tickers.items()), columns=["Commodity", "Ticker"])
+            commodity_data['Units'] = commodity_data['Commodity'].map((data_collection_preprocessing.commodity_units))
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### Commodity Configuration")
+                st.dataframe(commodity_data,hide_index=True,use_container_width = True)
+            with col2:
+                st.markdown("### Data Specifications")
+                st.dataframe(pd.DataFrame(list(data_collection_preprocessing.data_Specifications.items()), columns=["Data", "Specifications"]),hide_index=True,use_container_width = True)
+                
+
+
             
-            st.write(data_collection_preprocessing.commodity_tickers)
-            st.write("### Processed Commodity Data")
-            st.dataframe(df)
+            st.write("### Extraced and Pre-Processed Commodity Data")
+            st.dataframe(combined_data)
+            st.write(f"rows: {combined_data.shape[0]} and columns: {combined_data.shape[1]}")
+
+            # Display the Data Pipeline flow as markdown
+            st.markdown("""
+            ### Data Pipeline Overview
+
+            The following steps represent the pipeline that extracts, transforms, and exports commodity data, followed by feature engineering and providing the data to the end user for analysis.
+
+
+            - #### 1. **Data Extraction**
+                - **Source**: Yahoo Finance
+                - **Step**: Fetch commodity data for specific commodities: Corn, Wheat, Soybeans, Sugar, Coffee.
+                - **Inputs**: 
+                    - Commodity tickers (`'corn': 'ZC=F'`, `'wheat': 'ZW=F'`, etc.)
+                    - Start and end dates for data extraction.
+
+
+            - #### 2. **Data Transformation and Integration**
+                - **Step**: Process and transform the fetched data to make it ready for analysis.
+                - **Substeps**:
+                    - **Unit Conversion**: Convert the commodity data units as needed.
+                    - **Data Integration**: Combine different data sources into a cohesive dataset.
+                    - **Monthly Re-Sampling**: Adjust the data to ensure consistency in time intervals.
+
+
+            - #### 3. **Data Quality Handling**
+                - **Step**: Ensure data quality by handling missing values.
+                - **Substeps**:
+                    - **Missing Data Detection**: Identifies gaps in the data range to find missing months.
+                    - **KNN Imputation**: Uses K-Nearest Neighbors (KNN) to impute missing or NaN values.
+
+
+            - #### 4. **Feature Engineering**
+                - **Step**: Analyze the data for meaningful patterns.
+                - **Substeps**:
+                    - **Year-over-Year Percentage Change**: Computes the 12-month percentage change for each commodity to analyze annual price trends.
+
+
+            - #### 5. **Data Export**
+                - **Step**: Export the processed data for use.
+                - **Substeps**:
+                    - **Export Process**: Data is exported as a CSV file for further analysis or reporting.
+                    - **Output**: A downloadable CSV file of the processed commodity data.
+
+
+            - #### 6. **End User**
+                - **Final Step**: The processed data is available for the end user to analyze, report, or further process.
+                """)
+            st.image('Pipeline.jpg', width=800)
+ 
+            # Download Button for CSV Export
+            st.markdown("### Data Export")
+            st.markdown("""
+            **Bulk Download**  
+            You can download an entire table with one of the following links. The output format is always the same: a single CSV file containing the entire data table.
+            """)
+
+            # Create Download Buttons
+            st.download_button(
+                label="Download Commodity Data",
+                data=combined_data.to_csv(index=False),
+                file_name="commodity_data.csv",
+                mime="text/csv",
+                icon=":material/file_save:"
+            )
+
+            # Create Download Buttons
+            st.download_button(
+                label="Download Commodity Configuration",
+                data=commodity_data.to_csv(index=False),
+                file_name="commodity_configuration.csv",
+                mime="text/csv",
+                icon = ":material/file_save:"
+            )
+        # if(selected_page=="Statistics"):
 
         # Footer
         st.markdown("""
