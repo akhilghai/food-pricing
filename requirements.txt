@@ -9,3 +9,7 @@ streamlit-login-auth-ui
 trycourier
 bcrypt 
 streamlit-option-menu
+numpy
+seaborn
+matplotlib
+plotly

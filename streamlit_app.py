@@ -2,6 +2,10 @@ import streamlit as st
 import data_collection_preprocessing
 from streamlit_option_menu import option_menu
 import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 def format_green(text:str):
     st.markdown(
@@ -43,7 +47,7 @@ def main():
         with st.sidebar:
             selected_page = option_menu(
                 menu_title="Menu",
-                options=["Overview", "Statistics", "Forecasting", 
+                options=["Overview", "General Statistics", "Forecasting", 
                         "About"],
                 icons=["house", "bar-chart-line", "bi-graph-up-arrow", "bi-info-square-fill", ],
                 menu_icon="cast",
@@ -109,7 +113,7 @@ def main():
 
 
             
-            st.write("### Extraced and Pre-Processed Commodity Data")
+            st.write("### Final Commodity Data after Data Collection , Pre-processing and Feature Eng.")
             st.dataframe(combined_data)
             st.write(f"rows: {combined_data.shape[0]} and columns: {combined_data.shape[1]}")
 
@@ -185,7 +189,41 @@ def main():
                 mime="text/csv",
                 icon = ":material/file_save:"
             )
-        # if(selected_page=="Statistics"):
+        if(selected_page=="General Statistics"):
+            st.markdown('---')
+            format_green("General Statistics")
+
+            st.markdown("#### Basic statistical measures, including mean, median, and standard deviation, for key metrics")
+            st.write(combined_data[["corn","wheat","soybeans","sugar","coffee"]].describe())
+            # Plot correlation map
+            st.markdown("### Correlation Map")
+            fig, ax = plt.subplots(figsize=(8, 4))   # Adjust the figure size as needed
+            sns.heatmap( 
+                combined_data[["corn","wheat","soybeans","sugar","coffee"]].corr(),
+                annot=True,
+                fmt=".2f",
+                cmap="Greens",
+                cbar=True,
+                square=True,
+                linewidths=0.5,
+                ax=ax,
+                )
+            st.pyplot(fig,clear_figure = True,use_container_width=False) 
+
+            
+            st.markdown("")
+
+            st.markdown("### Boxplot of Commodities Price")
+            fig=px.box(data_frame=combined_data[["corn","wheat","soybeans","sugar","coffee"]],
+                        # y=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Use the columns as the categories
+                        # color=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Color each commodity differently
+                        )
+            # Update axis labels
+            fig.update_layout(
+                xaxis_title="Commodities",  # Custom x-axis label
+                yaxis_title="Price",        # Custom y-axis label
+            )
+            st.plotly_chart(fig)               
 
         # Footer
         st.markdown("""
