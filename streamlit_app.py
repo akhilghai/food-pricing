@@ -6,12 +6,20 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
+import scipy.stats as stats
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+
+
+
 
 def format_green(text:str):
     st.markdown(
         f"""
         <div style="text-align: center;">
-            <h2 style="color: #adcbbe;">{text}</h2>
+            <h2 style="color: #4caf50;">{text}</h2>
         </div>
         """,
         unsafe_allow_html=True
@@ -47,14 +55,16 @@ def main():
         with st.sidebar:
             selected_page = option_menu(
                 menu_title="Menu",
-                options=["Overview", "General Statistics", "Forecasting", 
+                options=["Overview", "General Statistics","Trends", "Forecasting", 
                         "About"],
-                icons=["house", "bar-chart-line", "bi-graph-up-arrow", "bi-info-square-fill", ],
+                icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-rocket", "bi-info-square-fill"],
                 menu_icon="cast",
                 default_index=0,
                 orientation="vertical",
                 key="navigation_menu"
             )
+
+
 
         st.sidebar.markdown("---")
         
@@ -68,7 +78,7 @@ def main():
         st.markdown(
             """
             <div style="text-align: center;">
-                <h1 style="color: #adcbbe;">U.S. Food Price Forecasting</h1>
+                <h1 style="color: #4caf50;">U.S. Food Price Forecasting</h1>
                 <h2>Predicting Future Trends for U.S. Food Commodities</h2>
             </div>
             <div>
@@ -192,38 +202,143 @@ def main():
         if(selected_page=="General Statistics"):
             st.markdown('---')
             format_green("General Statistics")
+            tab1, tab2 = st.tabs(["Data Summary", "Graphical Analysis"])
 
-            st.markdown("#### Basic statistical measures, including mean, median, and standard deviation, for key metrics")
-            st.write(combined_data[["corn","wheat","soybeans","sugar","coffee"]].describe())
-            # Plot correlation map
-            st.markdown("### Correlation Map")
-            fig, ax = plt.subplots(figsize=(8, 4))   # Adjust the figure size as needed
-            sns.heatmap( 
-                combined_data[["corn","wheat","soybeans","sugar","coffee"]].corr(),
-                annot=True,
-                fmt=".2f",
-                cmap="Greens",
-                cbar=True,
-                square=True,
-                linewidths=0.5,
-                ax=ax,
+            with tab1:
+                st.markdown("#### Basic statistical measures, including mean, median, and standard deviation, for key metrics")
+                st.write(combined_data[["corn","wheat","soybeans","sugar","coffee"]].describe())
+                # Plot correlation map
+                st.markdown("### Correlation Map between food commodities")
+                fig, ax = plt.subplots(figsize=(25, 4))   # Adjust the figure size as needed
+                sns.heatmap( 
+                    combined_data[["corn","wheat","soybeans","sugar","coffee"]].corr(),
+                    annot=True,
+                    fmt=".2f", 
+                    cmap="Blues",  
+                    cbar=True,
+                    vmin=0.4,
+                    vmax=1, 
+                    square=True,
+                    linewidths=0.5,
+                    ax=ax,
+                    )
+                st.pyplot(fig,clear_figure = True,use_container_width=False) 
+
+            with tab2:
+                
+                commodity_filter = st.selectbox(
+                    f"#### Please select the food commodity for analysis",
+                    options = data_collection_preprocessing.commodity_tickers.keys(),
                 )
-            st.pyplot(fig,clear_figure = True,use_container_width=False) 
+ 
+                
+                st.markdown(f"### Distribution of {commodity_filter}")
+                fig = ff.create_distplot(
+                        [combined_data[commodity_filter].dropna()], [commodity_filter],[0.1, 0.25, 0.5])
+                # Update axis labels
+                fig.update_layout(
+                    xaxis_title=f"Price in {data_collection_preprocessing.commodity_units[commodity_filter]}",  # Custom x-axis label
+                    yaxis_title="Frequency"     # Custom y-axis label
+                )
+                # Plot!
+                st.plotly_chart(fig, use_container_width=True)
 
-            
-            st.markdown("")
+                # Q-Q plot
+                st.markdown(f"### Q-Q Plot of {commodity_filter} Price")
+                data = combined_data[commodity_filter].dropna()  # Use raw data, cleaned of NaNs
+                (quantiles, values), _ = stats.probplot(data, dist="norm")  # Compute quantiles and values
+                
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=quantiles, y=values, mode="markers", name="Data"))  # Scatter plot of Q-Q points
+                
+                slope, intercept = np.polyfit(quantiles, values, 1)  # Fit a line to the data
+                fig.add_trace(go.Scatter(x=quantiles, y=slope * quantiles + intercept, mode="lines", name="Fit Line"))  # Fit line
+                
+                fig.update_layout(
+                    xaxis_title="Theoretical Quantiles",
+                    yaxis_title="Sample Quantiles"
+                )
+                # Show the plot in Streamlit
+                st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown("### Boxplot of Commodities Price")
-            fig=px.box(data_frame=combined_data[["corn","wheat","soybeans","sugar","coffee"]],
-                        # y=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Use the columns as the categories
-                        # color=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Color each commodity differently
-                        )
-            # Update axis labels
-            fig.update_layout(
-                xaxis_title="Commodities",  # Custom x-axis label
-                yaxis_title="Price",        # Custom y-axis label
+
+                st.markdown(f"### Boxplot of {commodity_filter}")
+                fig=px.box(data_frame=combined_data[commodity_filter],
+                            # y=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Use the columns as the categories
+                            # color=combined_data[["corn","wheat","soybeans","sugar","coffee"]].columns,  # Color each commodity differently
+                            )
+                # Update axis labels
+                fig.update_layout(
+                    xaxis_title="Commodity",  # Custom x-axis label
+                    yaxis_title=f"Price in {data_collection_preprocessing.commodity_units[commodity_filter]}",        # Custom y-axis label
+                )
+                st.plotly_chart(fig) 
+        if(selected_page=="Trends"):
+            st.markdown('---')
+            format_green("Trends")
+            trend_filter = st.selectbox(
+                    f"#### Please select the food commodity for analysis",
+                    options = data_collection_preprocessing.commodity_tickers.keys(),
+                )
+
+            # Date slider (2011 to 2024)
+            start_year, end_year = st.slider(
+                'Select a Year Range',
+                min_value=2000,
+                max_value=2024,
+                value=(2000, 2024),
+                step=1
             )
-            st.plotly_chart(fig)               
+
+            st.markdown(f'### Price Trend')
+            # Trend plot for corn (using the cached data)
+            fig = px.line(combined_data, x='Date', y=trend_filter)
+            fig.update_layout(xaxis_title='Date', yaxis_title=f"{trend_filter} Price in {data_collection_preprocessing.commodity_units[trend_filter]}",
+                              xaxis=dict(
+                                range=[f"{start_year}-01-01", f"{end_year}-12-31"]  # Update x-axis range
+                            ))
+            # Display the plot in Streamlit
+            st.plotly_chart(fig)
+
+            st.markdown(f'### Percentage Changes (Month-over-Month) Over Time')
+            # Trend plot for corn (using the cached data)
+            fig = px.line(combined_data, x='Date', y=f'{trend_filter}_m/m-12')
+            fig.update_layout(xaxis_title='Date', yaxis_title='Percentage Change (%)',
+                              xaxis=dict(
+                                range=[f"{start_year}-01-01", f"{end_year}-12-31"]  # Update x-axis range
+                            ))
+            # Display the plot in Streamlit
+            st.plotly_chart(fig)
+
+            st.markdown(f'### Seasonal Decomposition of {trend_filter}')
+            result = seasonal_decompose(combined_data[trend_filter].dropna(), model='additive', period=12)
+            # Plot observed, trend, seasonal, and residual
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=result.observed, mode='lines', name='Observed'))
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=result.trend, mode='lines', name='Trend'))
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=result.seasonal, mode='lines', name='Seasonal'))
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=result.resid, mode='lines', name='Residual'))
+            fig.update_layout(xaxis_title='Date', yaxis_title='Value',
+                              xaxis=dict(
+                                range=[f"{start_year}-01-01", f"{end_year}-12-31"]  # Update x-axis range
+                            ))
+            st.plotly_chart(fig)
+
+
+            st.markdown(f'### Rolling Statistics of {trend_filter}')
+            window = 12
+            rolling_mean = combined_data[trend_filter].rolling(window=window).mean()
+            rolling_std = combined_data[trend_filter].rolling(window=window).std()
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=combined_data[trend_filter], mode='lines', name='Original'))
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=rolling_mean, mode='lines', name=f'{window}-Month Rolling Mean', line=dict(color='orange')))
+            fig.add_trace(go.Scatter(x=combined_data['Date'], y=rolling_std, mode='lines', name=f'{window}-Month Rolling Std Dev', line=dict(color='red')))
+            fig.update_layout( xaxis_title='Date', yaxis_title='Value',
+                              xaxis=dict(
+                                range=[f"{start_year}-01-01", f"{end_year}-12-31"]  # Update x-axis range
+                            ))
+            st.plotly_chart(fig)
+                        
 
         # Footer
         st.markdown("""

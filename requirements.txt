@@ -13,3 +13,5 @@ numpy
 seaborn
 matplotlib
 plotly
+scipy
+statsmodels

@@ -15,6 +15,8 @@ warnings.filterwarnings('ignore')
 import streamlit_app
 
 
+
+
 # Load environment variables
 load_dotenv()
 
@@ -31,6 +33,46 @@ DB_CONFIG = {
 
 st.set_page_config(page_title="Food Price Forecasting", layout="wide", initial_sidebar_state="expanded")
 
+# Adding custom CSS for tab styling
+st.markdown(
+    """
+    <style>
+    /* Tab container */
+    div[data-testid="stTabs"] {
+        background-color: #f7f9fc;
+        border-radius: 10px;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* Tab headers */
+    div[data-testid="stTabs"].stTabs [role="tab"] {
+        border: 1px solid #e0e0e0;
+        background-color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin-right: 5px;
+        font-weight: bold;
+        color: #333333;
+    }
+
+    /* Active tab header */
+    div[data-testid="stTabs"].stTabs [role="tab"][aria-selected="true"] {
+        background-color: #4caf50;
+        color: #ffffff;
+        border-color: #4caf50;
+    }
+
+    /* Hover effect for tabs */
+    div[data-testid="stTabs"].stTabs [role="tab"]:hover {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # MySQL Database Connection
 def get_connection():

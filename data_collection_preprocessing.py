@@ -135,6 +135,10 @@ def preprocess_and_save_to_mysql(table_name="commodity_data"):
     # Handle missing values using KNN Imputer
     knn_imputer = KNNImputer(n_neighbors=5)
     combined_data.iloc[:, 1:] = knn_imputer.fit_transform(combined_data.iloc[:, 1:])
+
+    # Convert 'Date' column to datetime
+    combined_data['Date'] = pd.to_datetime(combined_data['Date'])
+    
     print(combined_data.head())
 
     # Save to Aiven MySQL
