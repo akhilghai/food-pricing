@@ -10,8 +10,9 @@ import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import scipy.stats as stats
 from statsmodels.tsa.seasonal import seasonal_decompose
-
-
+import os
+import train_model
+import pickle
 
 
 
@@ -49,15 +50,36 @@ def main():
         st.sidebar.image('user.png')
         st.sidebar.markdown("---")
 
-         # Load data
-        combined_data = get_data()
+        # Initialize a placeholder for progress bar
+        progress_placeholder = st.empty()
 
+        with progress_placeholder.container():  # Use a placeholder for progress bar
+            # Add a progress bar
+            with st.spinner("Loading data and training models..."):
+                # Progress initialization
+                progress_bar = st.progress(0)
+
+                # Load data
+                combined_data = get_data()
+                progress_bar.progress(33)  # Update progress to 33%
+
+                # Directory to store models and reports
+                MODEL_DIR = "models_and_reports"
+                # Ensure the directory exists
+                if not os.path.exists(MODEL_DIR):
+                    os.makedirs(MODEL_DIR)
+                    train_model.train_model_and_save(combined_data,MODEL_DIR)
+                progress_bar.progress(100)  # Update progress to 100%
+        # Remove progress bar after completion
+        progress_placeholder.empty()
+
+        
         with st.sidebar:
             selected_page = option_menu(
                 menu_title="Menu",
-                options=["Overview", "General Statistics","Trends", "Forecasting", 
+                options=["Overview", "General Statistics","Trends","Model Building & Evaluation", "Forecasting", 
                         "About"],
-                icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-rocket", "bi-info-square-fill"],
+                icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-gear","bi-rocket", "bi-info-square-fill"],
                 menu_icon="cast",
                 default_index=0,
                 orientation="vertical",
@@ -338,7 +360,36 @@ def main():
                                 range=[f"{start_year}-01-01", f"{end_year}-12-31"]  # Update x-axis range
                             ))
             st.plotly_chart(fig)
-                        
+        if(selected_page=="Model Building & Evaluation"):
+            # Placeholder for combined forecast data
+            combined_forecast_ml = pd.DataFrame()
+
+
+            # Define the layout for the plot
+            layout_ml = go.Layout(
+                title='Commodity Forecasting - Machine Learning Approach',
+                xaxis=dict(title='Date'),
+                yaxis=dict(title='Commodity Price'),
+                hovermode='closest',
+            )
+
+            # Forecasting and model training/testing loop
+            for commodity in data_collection_preprocessing.commodity_tickers.keys():
+                model_path = os.path.join(MODEL_DIR, f"{commodity}_rf_model.pkl")
+                report_path = os.path.join(MODEL_DIR, "evaluation_metrics.json")
+
+                # # Check if the model and report exist
+                # if os.path.exists(model_path) and os.path.exists(report_path):
+                print(f"Loading saved model for {commodity}...")
+                # Load the model
+                with open(model_path, 'rb') as f:
+                    rf_model = pickle.load(f)
+            # Load the report
+            with open(report_path, 'r') as f:
+                report = f.read()
+            print(report)
+
+            st.json(report)              
 
         # Footer
         st.markdown("""
