@@ -133,7 +133,7 @@ def main():
                 The Commodity Configuration allows users to track and forecast prices of key agricultural commodities in the U.S. market. 
                 Data for these commodities is fetched from Yahoo Finance for comprehensive analysis.
                 
-                - **Commodities Included**:- Corn, Wheat, Soybeans, Sugar and Coffee. These commodities are crucial indicators for agricultural markets, and the application enables detailed statistical and forecasting analysis.
+                - **Commodities Included**:- Corn, Wheat, Soybeans, Sugar, Coffee, Lean Hogs,  Rice and Oats. These commodities are crucial indicators for agricultural markets, and the application enables detailed statistical and forecasting analysis.
                 - **Data Source**: Yahoo Finance - The data is retrieved from Yahoo Finance, a trusted source for commodity and financial market data.
                 - **Coverage**: Data spans five core agricultural commodities since January 2011.
                 - **Data Organization**: Access is via programmatic queries to Yahoo Finance's API, allowing seamless integration for advanced forecasting.
@@ -168,7 +168,7 @@ def main():
 
             - #### 1. **Data Extraction**
                 - **Source**: Yahoo Finance
-                - **Step**: Fetch commodity data for specific commodities: Corn, Wheat, Soybeans, Sugar, Coffee.
+                - **Step**: Fetch commodity data for specific commodities: Corn, Wheat, Soybeans, Sugar, Coffee, Lean Hogs, Rice and Oats.
                 - **Inputs**: 
                     - Commodity tickers (`'corn': 'ZC=F'`, `'wheat': 'ZW=F'`, etc.)
                     - Start and end dates for data extraction.
@@ -238,12 +238,12 @@ def main():
 
             with tab1:
                 st.markdown("#### Basic statistical measures, including mean, median, and standard deviation, for key metrics")
-                st.write(combined_data[["corn","wheat","soybeans","sugar","coffee"]].describe())
+                st.write(combined_data[["corn","wheat","soybeans","sugar","coffee","rice", "oats","lean_hogs"]].describe())
                 # Plot correlation map
                 st.markdown("### Correlation Map between food commodities")
                 fig, ax = plt.subplots(figsize=(25, 4))   # Adjust the figure size as needed
                 sns.heatmap( 
-                    combined_data[["corn","wheat","soybeans","sugar","coffee"]].corr(),
+                    combined_data[["corn","wheat","soybeans","sugar","coffee","rice", "oats","lean_hogs"]].corr(),
                     annot=True,
                     fmt=".2f", 
                     cmap="Blues",  

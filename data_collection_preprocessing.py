@@ -33,7 +33,10 @@ commodity_tickers = {
     'wheat': 'ZW=F',
     'soybeans': 'ZS=F',
     'sugar': 'SB=F',
-    'coffee': 'KC=F'
+    'coffee': 'KC=F',
+    'rice':'ZR=F',
+    'oats':'ZO=F',
+    'lean_hogs': 'HE=F'
 }
 
 conversion_factors = {
@@ -41,7 +44,10 @@ conversion_factors = {
     'wheat': 0.01,
     'soybeans': 0.01,
     'sugar': 0.01,
-    'coffee': 0.01
+    'coffee': 0.01,   
+    'rice': 0.01,
+    'oats':0.01,
+    'lean_hogs': 0.01
 }
 
 # Units for each commodity (for future use in plotting)
@@ -50,18 +56,21 @@ commodity_units = {
     'wheat': 'USD per bushel',      # Wheat futures (CME)
     'soybeans': 'USD per bushel',   # Soybeans futures (CME)
     'sugar': 'USD per pound',       # Sugar futures (ICE)
-    'coffee': 'USD per pound'       # Coffee futures (ICE)
+    'coffee': 'USD per pound',       # Coffee futures (ICE)
+    'rice': 'USD per bushel',
+    'oats': 'USD per pound',
+    'lean_hogs': 'USD per pound' 
 }
 
 start_date = '2000-01-01'
-end_date = '2024-12-31'
+end_date = '2024-10-31'
 
 # data specifications
 data_Specifications={
         'Data Frequency': 'Monthly',
         'Start Date': start_date,
 		'End Date': end_date,
-        'Coverage': '5 indicators',
+        'Coverage': '8 Commodities',
         'Availability': 'Available'
 }
 
