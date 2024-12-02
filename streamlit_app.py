@@ -13,8 +13,16 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 import os
 import train_model
 import pickle
+import json
+import joblib
+from sklearn.ensemble import RandomForestRegressor
 
-
+# Function to create lagged features
+def create_lagged_features(data, lag):
+    df = data.copy()
+    for i in range(1, lag + 1):
+        df[f'lag_{i}'] = df['value'].shift(i)
+    return df.dropna()
 
 def format_green(text:str):
     st.markdown(
@@ -95,12 +103,14 @@ def main():
             st.rerun()
 
 
-
+#<h1 style="color: #4caf50;">U.S. Food Price Forecasting</h1>
         # Display Body
         st.markdown(
             """
+            <div style="background-color:#dbede6;padding:10px;text-align:center;">
+                 <h1 style="color:#4caf50;">U.S. Food Price Forecasting</h1>
+            </div>
             <div style="text-align: center;">
-                <h1 style="color: #4caf50;">U.S. Food Price Forecasting</h1>
                 <h2>Predicting Future Trends for U.S. Food Commodities</h2>
             </div>
             <div>
@@ -361,35 +371,359 @@ def main():
                             ))
             st.plotly_chart(fig)
         if(selected_page=="Model Building & Evaluation"):
+            st.markdown('---')
+            format_green("Model Building & Evaluation")
+            tab1, tab2 = st.tabs(["Objective and Methodology", "Results and Accuracy Metrics"])
+
+            with tab1:
+                st.markdown("""
+                            
+                ## **Objective**
+                Build a machine learning model to forecast commodity prices using historical data. The model leverages **lagged features** and an ensemble-based **Random Forest Regressor** for accurate predictions.
+
+                ---
+
+                ## **Methodology**
+
+                ### **1. Forecasting Model**
+                The model employs a **Random Forest Regressor** for its ability to:
+                - Handle non-linear relationships.
+                - Reduce overfitting through ensemble averaging.
+                - Maintain robustness to noise in the dataset.
+
+                ---
+
+                ### **2. Lagged Features**
+                To capture temporal dependencies, we created lagged features for each commodity's price data. Specifically:
+                - A **12-month lag** period was used to account for yearly seasonality.
+                - Features were created as `lag_1`, `lag_2`, ..., `lag_12`.
+
+                ---
+
+                ### **3. Train-Test Split**
+                The dataset was split as follows:
+                - **80% Training Data**
+                - **20% Testing Data**
+
+                This split ensures the temporal order is preserved for effective time-series forecasting.
+
+                ---
+
+                ## **Evaluation Metrics**
+
+                ### **1. Root Mean Squared Error (RMSE)**
+                Measures the standard deviation of prediction errors:
+                <p style="font-size: 18px;">
+                    RMSE = &radic; <sup>1/n</sup> &sum;<sub>i=1</sub><sup>n</sup> (y<sub>i</sub> - ŷ<sub>i</sub>)<sup>2</sup>
+                </p>
+
+                ---
+
+                ### **2. Mean Squared Error (MSE)**
+                Quantifies the average squared error between actual and predicted values:
+                <p style="font-size: 18px;">
+                    MSE = (1/n) &sum;<sub>i=1</sub><sup>n</sup> (y<sub>i</sub> - ŷ<sub>i</sub>)<sup>2</sup>
+                </p>
+
+                ---
+
+                ### **3. Mean Absolute Error (MAE)**
+                Represents the average magnitude of errors in predictions:
+                <p style="font-size: 18px;">
+                    MAE = (1/n) &sum;<sub>i=1</sub><sup>n</sup> |y<sub>i</sub> - ŷ<sub>i</sub>|
+                </p>
+
+                ---
+
+                ### **4. R-Squared (R²)**
+                Indicates the proportion of variance explained by the model:
+                <p style="font-size: 18px;">
+                    R<sup>2</sup> = 1 - &frac12; &sum;(y<sub>i</sub> - ŷ<sub>i</sub>)<sup>2</sup> / &sum;(y<sub>i</sub> - ȳ)<sup>2</sup>
+                </p>
+
+                ---
+
+                ### **5. Cross-Validation RMSE**
+                Calculated using 5-fold cross-validation for unbiased performance estimation:
+                <p style="font-size: 18px;">
+                    CV_RMSE = &radic; [-1/k &sum;(MSE)]
+                </p>
+
+                ---
+
+                ## **Model Training Workflow**
+
+                ### **Steps**
+                1. **Lagged Feature Creation**:
+                    - Created lagged features (`lag_1`, `lag_2`, ..., `lag_12`) for each commodity's historical data.
+                    
+                2. **Model Training**:
+                    - Used **Random Forest Regressor** with 100 estimators for training on the lagged features.
+
+                3. **Residual Analysis**:
+                    - Computed residuals (`Actual - Predicted`) to assess prediction errors and identify patterns.
+
+                4. **Cross-Validation**:
+                    - Performed **5-fold cross-validation** to validate the model's robustness across multiple subsets.
+
+                ---
+
+                ## **Conclusion**
+                The **Random Forest Regressor** effectively forecasts commodity prices, leveraging lagged features to capture historical patterns. Detailed evaluation ensures robustness and accuracy, making it a reliable tool for commodity price prediction.
+
+                """, unsafe_allow_html=True)
+
+            with tab2:
+
+                report_filter = st.selectbox(
+                    f"#### Please select the food commodity for analysis",
+                    options = data_collection_preprocessing.commodity_tickers.keys(),
+                )
+
+                # Header
+                st.markdown("## **Accuracy Metrics and Cross-Validation Results**")
+
+                report_path = os.path.join(MODEL_DIR, "evaluation_metrics.json")
+                # Load the report
+                with open(report_path, 'r') as f:
+                    report = f.read()
+                # print(report)
+                metrics_data = json.loads(report)
+
+                # st.json(report) 
+                
+
+                # Create 4 columns
+                col1, col2, col3, col4, col5 = st.columns(5)
+                
+
+                # Add metrics to each column
+                with col1:
+                    st.metric(label="RMSE", value=f"{metrics_data[report_filter]['RMSE']:.3f}", delta="✓", delta_color="normal")
+                    st.markdown('<p style="text-align: center; color: green; font-size: 16px;">Root Mean Squared Error</p>', unsafe_allow_html=True)
+
+                with col2:
+                    st.metric(label="MSE", value=f"{metrics_data[report_filter]['MSE']:.3f}", delta="✓", delta_color="normal")
+                    st.markdown('<p style="text-align: center; color: green; font-size: 16px;">Mean Squared Error</p>', unsafe_allow_html=True)
+
+                with col3:
+                    st.metric(label="MAE", value=f"{metrics_data[report_filter]['MAE']:.3f}", delta="✓", delta_color="normal")
+                    st.markdown('<p style="text-align: center; color: green; font-size: 16px;">Mean Absolute Error</p>', unsafe_allow_html=True)
+
+                with col4:
+                    st.metric(label="R-Squared", value=f"{metrics_data[report_filter]['R-Square']:.2f}", delta="✓", delta_color="normal")
+                    st.markdown('<p style="text-align: center; color: green; font-size: 16px;">Explained Variance</p>', unsafe_allow_html=True)
+
+                with col5:
+                    st.metric(label="RMSE CV", value=f"{metrics_data[report_filter]['Cross-Validation RMSE']:.2f}", delta="✓", delta_color="normal")
+                    st.markdown('<p style="text-align: center; color: green; font-size: 16px;">Model Robustness</p>', unsafe_allow_html=True)
+
+                residual_path = os.path.join(MODEL_DIR, "residuals_data.csv")
+                # # Load the report
+                # with open(residual_path, 'r') as f:
+                #     residuals = f.read()
+                # Load the CSV data into a pandas DataFrame
+                residuals_df = pd.read_csv(residual_path)
+                print(residuals_df)
+                #metrics_data = json.loads(report)
+                # Plot Actual, Predicted, and Residuals
+                st.write(f"## **Residual Analysis for {report_filter}**")
+                fig, ax = plt.subplots(figsize=(12, 6))
+                filtered_data = residuals_df[residuals_df['Commodity'] == report_filter]
+                # Create the plot
+                fig = go.Figure()
+
+                # Add Actual values line
+                fig.add_trace(go.Scatter(
+                    x=filtered_data['Date'],
+                    y=filtered_data['Actual'],
+                    mode='lines+markers',
+                    name='Actual',
+                    line=dict(color='blue'),
+                    marker=dict(size=6)
+                ))
+
+                # Add Predicted values line
+                fig.add_trace(go.Scatter(
+                    x=filtered_data['Date'],
+                    y=filtered_data['Predicted'],
+                    mode='lines+markers',
+                    name='Predicted',
+                    line=dict(color='green'),
+                    marker=dict(size=6)
+                ))
+
+                # Add Residuals as bars
+                fig.add_trace(go.Bar(
+                    x=filtered_data['Date'],
+                    y=filtered_data['Residuals'],
+                    name='Residuals',
+                    marker=dict(color='red', opacity=0.6)
+                ))
+
+                # Customize layout
+                fig.update_layout(
+                    xaxis_title="Date",
+                    yaxis_title="Values",
+                    barmode='overlay',
+                    template='plotly_white',
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="center",
+                        x=0.5
+                    )
+                )
+
+                # Display the plot in Streamlit
+                st.plotly_chart(fig, use_container_width=True)
+                
+                
+        if(selected_page=="Forecasting"):
+
+            st.markdown('---')
+            format_green("Forecasting")
+
             # Placeholder for combined forecast data
-            combined_forecast_ml = pd.DataFrame()
+            combined_forecast_ml = pd.DataFrame()            
 
-
-            # Define the layout for the plot
+            commodity_filter = st.selectbox(
+                    f"#### Please select the food commodity to forecast",
+                    options = data_collection_preprocessing.commodity_tickers.keys(),
+                )
+            
+            # Slider for number of months
+            num_months = st.slider(
+                label="Select the number of months for forecast",
+                min_value=3,
+                max_value=12,
+                value=6,  # Default value
+                step=1
+            )
+            # Define the layout with range slider
             layout_ml = go.Layout(
-                title='Commodity Forecasting - Machine Learning Approach',
-                xaxis=dict(title='Date'),
-                yaxis=dict(title='Commodity Price'),
+                title=f"{commodity_filter} - Forecast for {num_months} Months",
+                xaxis=dict(
+                    title="Date",
+                    rangeslider=dict(
+                        visible=True,  # Enables the range slider
+                        thickness=0.1  # Slider thickness
+                    ),
+                    type="date"  # Set x-axis to date type
+                ),
+                yaxis=dict(title="Commodity Price"),
                 hovermode='closest',
+                template="plotly_white",
             )
 
+            #rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
             # Forecasting and model training/testing loop
-            for commodity in data_collection_preprocessing.commodity_tickers.keys():
-                model_path = os.path.join(MODEL_DIR, f"{commodity}_rf_model.pkl")
-                report_path = os.path.join(MODEL_DIR, "evaluation_metrics.json")
+            model_path = os.path.join(MODEL_DIR, f"{commodity_filter}_rf_model.pkl")
+            # # Check if the model and report exist
+            # if os.path.exists(model_path) and os.path.exists(report_path):
+            print(f"Loading saved model for {commodity_filter}...")
+            # Load the model
+            with open(model_path, 'rb') as f:
+                 rf_model = pickle.load(f)
+            #rf_model = joblib.load(model_path)
+            fr_commodity_data = combined_data[['Date', commodity_filter]].dropna()
 
-                # # Check if the model and report exist
-                # if os.path.exists(model_path) and os.path.exists(report_path):
-                print(f"Loading saved model for {commodity}...")
-                # Load the model
-                with open(model_path, 'rb') as f:
-                    rf_model = pickle.load(f)
-            # Load the report
-            with open(report_path, 'r') as f:
-                report = f.read()
-            print(report)
+            # Convert 'Date' column to datetime format
+            # commodity_data['Date'] = pd.to_datetime(commodity_data['Date'], errors='coerce')
+            fr_commodity_data = fr_commodity_data.dropna(subset=['Date'])
+            fr_commodity_data.set_index('Date', inplace=True)
 
-            st.json(report)              
+            
+
+            # Prepare supervised learning data
+            fr_commodity_data = fr_commodity_data.rename(columns={commodity_filter: 'value'})
+            supervised_data = create_lagged_features(fr_commodity_data, lag=12)
+
+            X = supervised_data.drop(columns=['value'])
+
+            last_known_values = X.iloc[-1].values.reshape(1, -1)
+
+            # Forecast the selected number of months with confidence intervals
+            future_forecast_values = []
+            lower_bounds = []
+            upper_bounds = []
+
+            for _ in range(num_months):
+                # Get predictions from individual trees in the forest
+                individual_predictions = np.array([tree.predict(last_known_values)[0] for tree in rf_model.estimators_])
+                
+                # Calculate mean and standard deviation
+                mean_prediction = individual_predictions.mean()
+                std_dev = individual_predictions.std()
+                
+                # Confidence intervals (95%)
+                lower_bound = mean_prediction - 1.96 * std_dev
+                upper_bound = mean_prediction + 1.96 * std_dev
+
+                # Append results
+                future_forecast_values.append(mean_prediction)
+                lower_bounds.append(lower_bound)
+                upper_bounds.append(upper_bound)
+
+                # Update last known values
+                last_known_values = np.roll(last_known_values, -1)
+                last_known_values[0, -1] = mean_prediction
+
+            # Create a DataFrame for future forecasts
+            future_forecast_index = pd.date_range(
+                start=fr_commodity_data.index[-1],
+                periods=num_months + 1,
+                freq='M'
+            )[1:]  # Exclude the starting month
+
+            future_forecast_ml_df = pd.DataFrame({
+                'Date': future_forecast_index,
+                'value': future_forecast_values,
+                'lower_bound': lower_bounds,
+                'upper_bound': upper_bounds,
+                'commodity': [commodity_filter] * num_months
+            })
+
+            # Plot original and forecast data with confidence intervals
+            trace_original = go.Scatter(
+                x=fr_commodity_data.index,
+                y=fr_commodity_data['value'],
+                mode='lines',
+                name=f'{commodity_filter} - Original Data',
+                line=dict(dash='dash'),
+                # hovertemplate='Date: %{x}<br>Actual: %{y}<extra></extra>'
+            )
+            trace_forecast = go.Scatter(
+                x=future_forecast_index,
+                y=future_forecast_values,
+                mode='lines',
+                name=f'{commodity_filter} - ML Forecast',
+                line=dict(color='purple'),
+                # hovertemplate='Date: %{x}<br>Predicted: %{y}<extra></extra>'
+            )
+            trace_ci = go.Scatter(
+                x=list(future_forecast_index) + list(future_forecast_index[::-1]),
+                y=list(upper_bounds) + list(lower_bounds[::-1]),
+                fill='toself',
+                fillcolor='rgba(173, 216, 230, 0.2)',  # Light blue fill
+                line=dict(color='rgba(255,255,255,0)'),  # No boundary line
+                name='95% Confidence Interval',
+                # hovertemplate='Date: %{x}<br>Confidence Interval: [%{y[0]}, %{y[1]}]<extra></extra>'
+            )
+
+            fig = go.Figure(data=[trace_original, trace_forecast, trace_ci], layout=layout_ml)
+
+            # Display plot
+            st.plotly_chart(fig)
+
+            # Create Download Buttons
+            st.download_button(
+                label=f"Download Forecast Data for {commodity_filter}",
+                data=future_forecast_ml_df.to_csv(index=False),
+                file_name=f"future_forecast_ml_df_{commodity_filter}.csv",
+                mime="text/csv"
+            )
 
         # Footer
         st.markdown("""

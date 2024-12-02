@@ -26,6 +26,7 @@ def create_lagged_features(data, lag):
 def train_model_and_save(combined_data,MODEL_DIR):
 
     all_metrics = {}  # Dictionary to store metrics for all commodities
+    residuals_df = pd.DataFrame()
     for commodity in commodities:
         model_path = os.path.join(MODEL_DIR, f"{commodity}_rf_model.pkl")
         # report_path = os.path.join(MODEL_DIR, f"{commodity}_accuracy_report.txt")
@@ -70,7 +71,7 @@ def train_model_and_save(combined_data,MODEL_DIR):
         # Add metrics to the dictionary
         all_metrics[commodity] = metrics
 
-        residuals_df = pd.DataFrame()
+        
         # Store residuals in a DataFrame
         temp_residuals_df = pd.DataFrame({
             "Date": y_test.index,

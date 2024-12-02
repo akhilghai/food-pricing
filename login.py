@@ -258,6 +258,7 @@ if __name__ == "__main__":
         button[kind="expand"] {
             display: none !important;
         }
+        
         </style>
         """,
         unsafe_allow_html=True
