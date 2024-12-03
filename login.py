@@ -30,25 +30,45 @@ import streamlit_app
 #     "ssl_disabled": False
 # }
 
-# New Code
-# Load environment variables
-load_dotenv()
+# # New Code
+# # Load environment variables
+# load_dotenv()
+
+# # Write certificate content to a temporary file
+# ca_cert_content = os.getenv("CA_CERTIFICATE")
+# if ca_cert_content:
+#     with tempfile.NamedTemporaryFile(delete=False) as temp_cert_file:
+#         temp_cert_file.write(ca_cert_content.encode())
+#         ssl_ca_path = temp_cert_file.name
+# else:
+#     ssl_ca_path = None
+
+# DB_CONFIG = {
+#     "user": os.getenv("DB_USER"),
+#     "password": os.getenv("DB_PASSWORD"),
+#     "host": os.getenv("DB_HOST"),
+#     "database": os.getenv("DB_NAME"),
+#     "port": int(os.getenv("DB_PORT")),
+#     "ssl_ca": ssl_ca_path,
+#     "ssl_disabled": False,
+# }
 
 # Write certificate content to a temporary file
-ca_cert_content = os.getenv("CA_CERTIFICATE")
+ca_cert_content = st.secrets["DB_CONFIG"]["CA_CERTIFICATE"]
 if ca_cert_content:
-    with tempfile.NamedTemporaryFile(delete=False) as temp_cert_file:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pem") as temp_cert_file:
         temp_cert_file.write(ca_cert_content.encode())
         ssl_ca_path = temp_cert_file.name
 else:
     ssl_ca_path = None
 
+# Database Configuration
 DB_CONFIG = {
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "host": os.getenv("DB_HOST"),
-    "database": os.getenv("DB_NAME"),
-    "port": int(os.getenv("DB_PORT")),
+    "user": st.secrets["DB_CONFIG"]["DB_USER"],
+    "password": st.secrets["DB_CONFIG"]["DB_PASSWORD"],
+    "host": st.secrets["DB_CONFIG"]["DB_HOST"],
+    "database": st.secrets["DB_CONFIG"]["DB_NAME"],
+    "port": int(st.secrets["DB_CONFIG"]["DB_PORT"]),
     "ssl_ca": ssl_ca_path,
     "ssl_disabled": False,
 }
