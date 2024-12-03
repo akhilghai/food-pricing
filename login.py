@@ -7,6 +7,7 @@ import secrets
 import datetime
 import os
 from dotenv import load_dotenv
+import tempfile
 
 # Suppress warnings
 import warnings
@@ -14,21 +15,42 @@ warnings.filterwarnings('ignore')
 
 import streamlit_app
 
+# Old Code
+# # Load environment variables
+# load_dotenv()
 
+# # Aiven MySQL Connection Details
+# DB_CONFIG = {
+#     "user": os.getenv("DB_USER"),
+#     "password": os.getenv("DB_PASSWORD"),
+#     "host": os.getenv("DB_HOST"),
+#     "database": os.getenv("DB_NAME"),
+#     "port": int(os.getenv("DB_PORT")),
+#     "ssl_ca": os.getenv("SSL_CA_PATH"),
+#     "ssl_disabled": False
+# }
 
-
+# New Code
 # Load environment variables
 load_dotenv()
 
-# Aiven MySQL Connection Details
+# Write certificate content to a temporary file
+ca_cert_content = os.getenv("CA_CERTIFICATE")
+if ca_cert_content:
+    with tempfile.NamedTemporaryFile(delete=False) as temp_cert_file:
+        temp_cert_file.write(ca_cert_content.encode())
+        ssl_ca_path = temp_cert_file.name
+else:
+    ssl_ca_path = None
+
 DB_CONFIG = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "host": os.getenv("DB_HOST"),
     "database": os.getenv("DB_NAME"),
     "port": int(os.getenv("DB_PORT")),
-    "ssl_ca": os.getenv("SSL_CA_PATH"),
-    "ssl_disabled": False
+    "ssl_ca": ssl_ca_path,
+    "ssl_disabled": False,
 }
 
 st.set_page_config(page_title="Food Price Forecasting", layout="wide", initial_sidebar_state="expanded")

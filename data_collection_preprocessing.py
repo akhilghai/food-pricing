@@ -6,25 +6,50 @@ from sqlalchemy import create_engine, inspect
 from sklearn.impute import KNNImputer
 import warnings
 import os
+import tempfile
 
 warnings.filterwarnings('ignore')
 
 # Load environment variables
 from dotenv import load_dotenv
 
-# CA_CERT_PATH = 'ca.pem'
-load_dotenv()  # Load the .env file
+# Old Code
+# # CA_CERT_PATH = 'ca.pem'
+# load_dotenv()  # Load the .env file
 
 
-# Aiven MySQL Connection Details
+# # Aiven MySQL Connection Details
+# DB_CONFIG = {
+#     "user": os.getenv("DB_USER"),  # Fetch user from the environment variable
+#     "password": os.getenv("DB_PASSWORD"),  # Fetch password from the environment variable
+#     "host": os.getenv("DB_HOST"),  # Fetch host from the environment variable
+#     "database": os.getenv("DB_NAME"),  # Fetch database from the environment variable
+#     "port": int(os.getenv("DB_PORT")),  # Fetch port from the environment variable
+#     "ssl_ca": os.getenv("SSL_CA_PATH"),  # Fetch SSL certificate path from the environment variable
+#     "ssl_disabled": False  # SSL is required, so it's False
+# }
+
+# New Code
+# Load environment variables
+load_dotenv()
+
+# Write certificate content to a temporary file
+ca_cert_content = os.getenv("CA_CERTIFICATE")
+if ca_cert_content:
+    with tempfile.NamedTemporaryFile(delete=False) as temp_cert_file:
+        temp_cert_file.write(ca_cert_content.encode())
+        ssl_ca_path = temp_cert_file.name
+else:
+    ssl_ca_path = None
+
 DB_CONFIG = {
-    "user": os.getenv("DB_USER"),  # Fetch user from the environment variable
-    "password": os.getenv("DB_PASSWORD"),  # Fetch password from the environment variable
-    "host": os.getenv("DB_HOST"),  # Fetch host from the environment variable
-    "database": os.getenv("DB_NAME"),  # Fetch database from the environment variable
-    "port": int(os.getenv("DB_PORT")),  # Fetch port from the environment variable
-    "ssl_ca": os.getenv("SSL_CA_PATH"),  # Fetch SSL certificate path from the environment variable
-    "ssl_disabled": False  # SSL is required, so it's False
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "database": os.getenv("DB_NAME"),
+    "port": int(os.getenv("DB_PORT")),
+    "ssl_ca": ssl_ca_path,
+    "ssl_disabled": False,
 }
 
 # Commodity Configuration
@@ -74,7 +99,17 @@ data_Specifications={
         'Availability': 'Available'
 }
 
-
+def create_raw_commodity_table(engine,table_name="raw_commodity_table"):
+    metadata = MetaData()
+    raw_commodity_table = Table(
+        table_name, metadata,
+        Column('Date', DateTime),
+        *(Column(commodity, Float) for commodity in commodity_tickers.keys())
+        
+    )
+    metadata.create_all(engine)
+    print(f"Table '{table_name}' ensured in database.")
+    return raw_commodity_table
 
 
 # Function to check if table exists in MySQL with SSL support
@@ -130,6 +165,24 @@ def preprocess_and_save_to_mysql(table_name="commodity_data"):
     # Flatten the columns from MultiIndex
     combined_data.columns = [col[0] for col in combined_data.columns]
 
+    # Save to Aiven MySQL
+    try:
+        engine = create_engine(f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?ssl_ca={DB_CONFIG['ssl_ca']}&ssl_disabled={DB_CONFIG['ssl_disabled']}")
+        connection = engine.connect()
+        print("Connection to MySQL (Aiven) successful!")
+    except Exception as e:
+        print(f"Error connecting to MySQL: {e}")
+        
+    if not table_exists("raw_commodity_table"):
+        create_raw_commodity_table(engine)
+    
+
+    try:
+        combined_data.to_sql("raw_commodity_table", con=engine, if_exists="replace", index=False, chunksize=500)
+        print(f"Data for raw_commodity_table saved to MySQL.")
+    except SQLAlchemyError as e:
+        print(f"An error occurred while saving data: {e}")
+
     # Interpolate missing months
     full_date_range = pd.date_range(start=combined_data["Date"].min(), end=combined_data["Date"].max(), freq='M')
     combined_data.set_index("Date", inplace=True)
@@ -150,13 +203,7 @@ def preprocess_and_save_to_mysql(table_name="commodity_data"):
     
     print(combined_data.head())
 
-    # Save to Aiven MySQL
-    try:
-        engine = create_engine(f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?ssl_ca={DB_CONFIG['ssl_ca']}&ssl_disabled={DB_CONFIG['ssl_disabled']}")
-        connection = engine.connect()
-        print("Connection to MySQL (Aiven) successful!")
-    except Exception as e:
-        print(f"Error connecting to MySQL: {e}")
+    
 
     create_commodity_table(engine, table_name)
 
@@ -172,3 +219,5 @@ def preprocess_and_save_to_mysql(table_name="commodity_data"):
 def fetch_from_mysql(table_name="commodity_data"):
     engine = create_engine(f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?ssl_ca={DB_CONFIG['ssl_ca']}&ssl_disabled={DB_CONFIG['ssl_disabled']}")
     return pd.read_sql(f"SELECT * FROM {table_name}", con=engine)
+
+# preprocess_and_save_to_mysql()
