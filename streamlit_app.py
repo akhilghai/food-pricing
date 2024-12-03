@@ -733,8 +733,6 @@ def main():
         """, unsafe_allow_html=True)
     else:
         st.title("Please log in to access the dashboard.")
-if __name__ == "__main__":
-    main()
 
 #_____________________________________
 
