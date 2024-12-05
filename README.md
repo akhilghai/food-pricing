@@ -1,8 +1,22 @@
-# 🎈 Blank app template
+# 🎈 Food Pricing Forecast
 
-A simple Streamlit app template for you to modify!
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+<div style="background-color:#dbede6;padding:10px;text-align:center;">
+<h1 style="color:#4caf50;">U.S. Food Price Forecasting</h1>
+</div>
+
+<div style="text-align: center;">
+
+## Predicting Future Trends for U.S. Food Commodities
+
+</div>
+
+This project aims to develop a statistical and forecasting tool to analyze the **closing prices** of food commodities in the United States.  
+By leveraging data from Yahoo and applying advanced statistical models and forecasting techniques, the app provides insights into future price trends for a variety of food items.  
+
+This tool helps stakeholders make informed decisions regarding pricing, supply chain management, and budgeting, ensuring the accuracy and reliability of price predictions in the food market.
+
+
 
 ### How to run it on your own machine
 
@@ -15,5 +29,5 @@ A simple Streamlit app template for you to modify!
 2. Run the app
 
    ```
-   $ streamlit run streamlit_app.py
+   $ streamlit run login.py --server.enableCORS false --server.enableXsrfProtection false
    ```
