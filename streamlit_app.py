@@ -85,9 +85,12 @@ def main():
         with st.sidebar:
             selected_page = option_menu(
                 menu_title="Menu",
-                options=["Overview", "General Statistics","Trends","Model Building & Evaluation", "Forecasting", 
-                        "About"],
-                icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-gear","bi-rocket", "bi-info-square-fill"],
+                # options=["Overview", "General Statistics","Trends","Model Building & Evaluation", "Forecasting", 
+                #         "About"],
+                # icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-gear","bi-rocket", "bi-info-square-fill"],
+                options=["Overview", "General Statistics","Trends","Model Building & Evaluation", "Forecasting"
+                        ],
+                icons=["house", "bar-chart-line", "bi-graph-up-arrow","bi-gear","bi-rocket"],
                 menu_icon="cast",
                 default_index=0,
                 orientation="vertical",

@@ -263,16 +263,18 @@ def main():
         with st.sidebar:
             choice = option_menu(
                 "Menu",
-                ["Login", "Sign Up", "Forgot Password", "Reset Password"],
-                icons=["box-arrow-in-right", "person-plus", "key", "shield-lock"],
+                # ["Login", "Sign Up", "Forgot Password", "Reset Password"],
+                ["Login","Forgot Password", "Reset Password"],
+                # icons=["box-arrow-in-right", "person-plus", "key", "shield-lock"],
+                icons=["box-arrow-in-right", "key", "shield-lock"],
                 menu_icon="menu",
                 default_index=0
             )
 
         if choice == "Login":
             login()
-        elif choice == "Sign Up":
-            signup()
+        # elif choice == "Sign Up":
+        #     signup()
         elif choice == "Forgot Password":
             forgot_password()
         elif choice == "Reset Password":
